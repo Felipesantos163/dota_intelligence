@@ -1,0 +1,17 @@
+
+
+
+# comando para iniciar app MAC: 
+/usr/bin/python3 -m streamlit run app.py 
+PC: 
+python -m streamlit run app.py
+
+## Envia para o GitHub ##
+
+git add .
+git commit -m "minhas mudanças"
+git push origin main
+
+## Receber mudancas ##
+
+git pull origin main
