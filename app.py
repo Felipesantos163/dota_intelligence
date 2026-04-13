@@ -64,4 +64,5 @@ if st.button("📊 ANALISAR CONFRONTO", use_container_width=True):
                 vencedor = "RADIANT" if chance > 0.5 else "DIRE"
                 st.success(f"🔥 FAVORITO ESTATÍSTICO: **{vencedor}**")
 
-                # comando para iniciar app: /usr/bin/python3 -m streamlit run app.py
+                # comando para iniciar app MAC: /usr/bin/python3 -m streamlit run app.py PC: python -m streamlit run app.py
+                
