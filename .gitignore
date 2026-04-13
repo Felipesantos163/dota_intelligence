@@ -1,0 +1,9 @@
+# arquivos desnecessários
+node_modules/
+vendor/
+.env
+*.log
+~$*
+
+# macOS
+.DS_Store
