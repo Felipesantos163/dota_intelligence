@@ -15,3 +15,5 @@ git push origin main
 ## Receber mudancas ##
 
 git pull origin main
+
+Voltar ao ultimo commite deletando o que foi alterado: git reset --hard HEAD
