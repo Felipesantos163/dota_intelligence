@@ -60,7 +60,22 @@ st.divider()
 
 # --- SEÇÃO DE DRAFT ---
 st.subheader("⚔️ Draft dos Heróis")
-st.caption("Digite o nome do herói (ex: Pudge, SF) ou o ID direto (ex: 14).")
+st.caption("Selecione os heróis na lista (você pode digitar para buscar rapidamente).")
+
+# 1. Cria a lista de opções ordenada alfabeticamente (com um espaço em branco no início)
+opcoes_herois = [""] + sorted(list(dict_herois.keys()))
+
+# 2. Inicializa a "memória" do Streamlit para os slots (necessário para o botão inverter funcionar)
+for i in range(5):
+    if f"r{i}" not in st.session_state: st.session_state[f"r{i}"] = ""
+    if f"d{i}" not in st.session_state: st.session_state[f"d{i}"] = ""
+
+# 3. Botão para inverter os drafts
+if st.button("🔄 Inverter Lados"):
+    for i in range(5):
+        # Troca os valores da memória cruzando Radiant com Dire
+        st.session_state[f"r{i}"], st.session_state[f"d{i}"] = st.session_state[f"d{i}"], st.session_state[f"r{i}"]
+
 col_rad_ui, col_dire_ui = st.columns(2)
 
 rad_h_input = []
@@ -69,12 +84,14 @@ dire_h_input = []
 with col_rad_ui:
     st.markdown("<h4 style='color: #4CAF50;'>🟢 RADIANT</h4>", unsafe_allow_html=True)
     for i in range(5):
-        rad_h_input.append(st.text_input(f"Slot {i+1}", key=f"r{i}", placeholder="Herói ou ID"))
+        # Trocado text_input por selectbox
+        rad_h_input.append(st.selectbox(f"Slot {i+1}", options=opcoes_herois, key=f"r{i}"))
 
 with col_dire_ui:
     st.markdown("<h4 style='color: #F44336;'>🔴 DIRE</h4>", unsafe_allow_html=True)
     for i in range(5):
-        dire_h_input.append(st.text_input(f"Slot {i+1}", key=f"d{i}", placeholder="Herói ou ID"))
+        # Trocado text_input por selectbox
+        dire_h_input.append(st.selectbox(f"Slot {i+1}", options=opcoes_herois, key=f"d{i}"))
 
 # --- LÓGICA DE CONVERSÃO ---
 def validar_e_converter(lista_inputs, nome_lado):
