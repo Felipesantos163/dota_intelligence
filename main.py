@@ -20,7 +20,7 @@ DATASET_PATH = 'data/dataset_pro_v2.csv'
 # ==========================================
 # MÓDULO 1: MINERADOR (COLETA DE DADOS)
 # ==========================================
-def buscar_partidas_recentes(limite=2900):
+def buscar_partidas_recentes(limite=3000):
     print(f"\n🔍 Buscando histórico de partidas profissionais no OpenDota...")
     
     sql = f"""

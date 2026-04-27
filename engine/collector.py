@@ -97,8 +97,12 @@ class DotaCollector:
                     if obj['type'] == 'CHAT_MESSAGE_FIRSTBLOOD' and features['first_blood_team'] == -1:
                         features['first_blood_team'] = 0 if obj.get('player_slot', 0) < 128 else 1
                     
-                    if obj['type'] == 'BUILDING_KILL' and 'tower' in obj.get('key', '') and features['first_tower_team'] == -1:
+                    
+                    if obj['type'] == 'CHAT_MESSAGE_TOWER_KILL' and features['first_tower_team'] == -1:
                         features['first_tower_team'] = 0 if obj.get('team') == 2 else 1
+                    elif obj['type'] == 'BUILDING_KILL' and 'tower' in obj.get('key', '') and features['first_tower_team'] == -1:
+                        if 'goodguys' in obj.get('key', ''): features['first_tower_team'] = 1 
+                        elif 'badguys' in obj.get('key', ''): features['first_tower_team'] = 0
                     
                     if obj['type'] == 'CHAT_MESSAGE_ROSHAN_KILL' and features['first_roshan_team'] == -1:
                         features['first_roshan_time'] = obj['time']

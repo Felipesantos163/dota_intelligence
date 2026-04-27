@@ -9,7 +9,7 @@ st.set_page_config(page_title="Dota 2 Intelligence IA", page_icon="🧙‍♂️
 def load_predictor():
     return DotaPredictor()
 
-# 3. DICIONÁRIO OFFLINE COMPLETO (Baseado na tabela oficial enviada)
+# 3. DICIONÁRIO OFFLINE COMPLETO
 @st.cache_data
 def carregar_dicionario_herois():
     return {
@@ -39,7 +39,6 @@ def carregar_dicionario_herois():
         "primal beast": 137, "muerta": 138, "kez": 145, "largo": 155
     }
 
-# Inicialização de dados
 predictor = load_predictor()
 dict_herois = carregar_dicionario_herois()
 
@@ -62,35 +61,28 @@ st.divider()
 st.subheader("⚔️ Draft dos Heróis")
 st.caption("Selecione os heróis na lista (você pode digitar para buscar rapidamente).")
 
-# 1. Cria a lista de opções ordenada alfabeticamente (com um espaço em branco no início)
 opcoes_herois = [""] + sorted(list(dict_herois.keys()))
 
-# 2. Inicializa a "memória" do Streamlit para os slots (necessário para o botão inverter funcionar)
 for i in range(5):
     if f"r{i}" not in st.session_state: st.session_state[f"r{i}"] = ""
     if f"d{i}" not in st.session_state: st.session_state[f"d{i}"] = ""
 
-# 3. Botão para inverter os drafts
 if st.button("🔄 Inverter Lados"):
     for i in range(5):
-        # Troca os valores da memória cruzando Radiant com Dire
         st.session_state[f"r{i}"], st.session_state[f"d{i}"] = st.session_state[f"d{i}"], st.session_state[f"r{i}"]
 
 col_rad_ui, col_dire_ui = st.columns(2)
-
 rad_h_input = []
 dire_h_input = []
 
 with col_rad_ui:
     st.markdown("<h4 style='color: #4CAF50;'>🟢 RADIANT</h4>", unsafe_allow_html=True)
     for i in range(5):
-        # Trocado text_input por selectbox
         rad_h_input.append(st.selectbox(f"Slot {i+1}", options=opcoes_herois, key=f"r{i}"))
 
 with col_dire_ui:
     st.markdown("<h4 style='color: #F44336;'>🔴 DIRE</h4>", unsafe_allow_html=True)
     for i in range(5):
-        # Trocado text_input por selectbox
         dire_h_input.append(st.selectbox(f"Slot {i+1}", options=opcoes_herois, key=f"d{i}"))
 
 # --- LÓGICA DE CONVERSÃO ---
@@ -102,13 +94,12 @@ def validar_e_converter(lista_inputs, nome_lado):
         if not v:
             erros.append(f"O Slot {idx+1} ({nome_lado}) está vazio.")
             continue
-        
         if v.isdigit():
             ids_finais.append(int(v))
         elif v in dict_herois:
             ids_finais.append(dict_herois[v])
         else:
-            erros.append(f"Herói '{valor}' no Slot {idx+1} ({nome_lado}) não reconhecido.")
+            erros.append(f"Herói '{valor}' não reconhecido.")
     return ids_finais, erros
 
 # --- BOTÃO DE ANÁLISE ---
@@ -116,53 +107,57 @@ st.write("")
 if st.button("📊 ANALISAR CONFRONTO", use_container_width=True):
     rad_h_ids, erros_rad = validar_e_converter(rad_h_input, "Radiant")
     dire_h_ids, erros_dire = validar_e_converter(dire_h_input, "Dire")
-    
     total_erros = erros_rad + erros_dire
     
     if total_erros:
         st.error("⚠️ Problemas encontrados no preenchimento:")
-        for e in total_erros:
-            st.warning(e)
+        for e in total_erros: st.warning(e)
     else:
-        with st.spinner("IA analisando padrões históricos..."):
-            # 1. Probabilidade Real (Draft + Time)
-            chance_total, erro_ia = predictor.prever(rad_h_ids, dire_h_ids, time_rad, time_dire)
-            # 2. Probabilidade Pura (Somente Draft - ignorando times)
-            chance_draft, _ = predictor.prever(rad_h_ids, dire_h_ids, None, None)
+        with st.spinner("IA analisando previsões e níveis de confiança..."):
+            resultados, erro_ia = predictor.prever(rad_h_ids, dire_h_ids, time_rad, time_dire)
 
         if erro_ia:
-            st.error(f"Erro na IA: {erro_ia}")
+            st.error(erro_ia)
         else:
             st.divider()
             
-            # Exibe IDs para conferência
-            id_rad_res = predictor.resolver_id_time(time_rad) if time_rad else "Neutro"
-            id_dire_res = predictor.resolver_id_time(time_dire) if time_dire else "Neutro"
-            st.info(f"📊 **Dados Processados:** Radiant (ID: {id_rad_res}) vs Dire (ID: {id_dire_res})")
+            # --- PAINEL PRINCIPAL: VITÓRIA ---
+            st.subheader("🏆 Previsão de Vitória")
+            res_win = resultados.get('win')
+            if res_win:
+                vencedor = res_win['favorito']
+                chance = max(res_win['prob_radiant'], res_win['prob_dire'])
+                
+                col_w1, col_w2 = st.columns(2)
+                with col_w1:
+                    st.metric("Time Favorito", vencedor, f"{chance*100:.1f}% de probabilidade")
+                    st.progress(float(res_win['prob_radiant']))
+                with col_w2:
+                    st.metric("🎯 Taxa de Acerto Real (Confiabilidade)", res_win['confiabilidade'])
+                    st.caption("Precisão histórica do modelo para probabilidades nesta faixa.")
 
-            res_col1, res_col2 = st.columns(2)
-
-            # Lógica de exibição: Apenas Draft
-            with res_col1:
-                st.markdown("### 🎯 Apenas Draft")
-                st.caption("Considera sinergias de heróis e counters (Ignora o time).")
-                st.metric("Vantagem Radiant", f"{chance_draft*100:.2f}%")
-                st.progress(max(0.0, min(1.0, float(chance_draft))))
-
-            # Lógica de exibição: Draft + Time
-            with res_col2:
-                st.markdown("### 🏢 Draft + Time")
-                st.caption("Considera o draft somado ao histórico do time/organização.")
-                impacto = (chance_total - chance_draft) * 100
-                st.metric("Vantagem Radiant", f"{chance_total*100:.2f}%", delta=f"{impacto:+.2f}% vs Draft")
-                st.progress(max(0.0, min(1.0, float(chance_total))))
-
-            # Veredito Final
-            vencedor = "RADIANT" if chance_total > 0.5 else "DIRE"
-            cor = "success" if (vencedor == "RADIANT" and chance_total > 0.55) or (vencedor == "DIRE" and chance_total < 0.45) else "info"
+            st.divider()
             
-            st.write("")
-            if cor == "success":
-                st.success(f"🔥 FAVORITO ESTATÍSTICO: **{vencedor}**")
-            else:
-                st.info(f"⚖️ CONFRONTO EQUILIBRADO: Favoritismo leve para **{vencedor}**")
+            # --- PAINEL SECUNDÁRIO: OBJETIVOS ---
+            st.subheader("🎯 Objetivos Antecipados")
+            col_fb, col_tw = st.columns(2)
+            
+            with col_fb:
+                st.markdown("### 🩸 First Blood")
+                res_fb = resultados.get('fb')
+                if res_fb:
+                    chance_fb = max(res_fb['prob_radiant'], res_fb['prob_dire'])
+                    st.metric(res_fb['favorito'], f"{chance_fb*100:.1f}% de chance")
+                    st.caption(f"**Confiabilidade:** {res_fb['confiabilidade']}")
+                else:
+                    st.warning("Modelo de First Blood ausente.")
+                    
+            with col_tw:
+                st.markdown("### 🗼 Primeira Torre")
+                res_tw = resultados.get('tower')
+                if res_tw:
+                    chance_tw = max(res_tw['prob_radiant'], res_tw['prob_dire'])
+                    st.metric(res_tw['favorito'], f"{chance_tw*100:.1f}% de chance")
+                    st.caption(f"**Confiabilidade:** {res_tw['confiabilidade']}")
+                else:
+                    st.info("Pendente: Aguardando mais dados da mineração.")
