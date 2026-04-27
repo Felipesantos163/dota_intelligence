@@ -13,14 +13,14 @@ from engine.collector import DotaCollector
 from engine.trainer import DotaTrainer
 
 # CONFIGURAÇÕES
-LIMITE_BUSCA = 6500    
+LIMITE_BUSCA = 2900    
 INTERVALO_API = 1.0   
 DATASET_PATH = 'data/dataset_pro_v2.csv'
 
 # ==========================================
 # MÓDULO 1: MINERADOR (COLETA DE DADOS)
 # ==========================================
-def buscar_partidas_recentes(limite=6500):
+def buscar_partidas_recentes(limite=2900):
     print(f"\n🔍 Buscando histórico de partidas profissionais no OpenDota...")
     
     sql = f"""
