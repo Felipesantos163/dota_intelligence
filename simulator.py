@@ -71,13 +71,12 @@ class DotaPredictor:
                 col_name = f'hero_{int(h_id)}_adv'
                 if col_name in config['cols']: input_data[col_name] = -1
 
-            # Monta matriz
-            df_predict = pd.DataFrame(columns=config['cols'])
-            df_predict.loc[0] = 0 
+            # A CORREÇÃO: Cria a matriz já com float (0.0) para não dar conflito com o Pandas
+            df_predict = pd.DataFrame(0.0, index=[0], columns=config['cols'])
             
             for col, valor in input_data.items():
                 if col in df_predict.columns:
-                    df_predict.loc[0, col] = valor
+                    df_predict.loc[0, col] = float(valor)
             
             df_predict = df_predict[config['cols']]
             
@@ -92,7 +91,11 @@ class DotaPredictor:
                 'confiabilidade': conf_text
             }
 
-        return resultados, None
+        # A CORREÇÃO DA BOMBA-RELÓGIO: 
+        # O bot_dota.py espera que a primeira variável seja APENAS o número do winrate
+        winrate_principal = resultados['win']['prob_radiant'] if 'win' in resultados else 0.5
+        
+        return winrate_principal, resultados
 
 # ==========================================
 # MENU INTERATIVO PARA TESTES NO TERMINAL
@@ -114,10 +117,12 @@ def menu_interativo():
     d_h = [input(f"Slot {i+1} ID: ") for i in range(5)]
 
     print("\n🧠 Analisando padrões históricos...")
-    resultados, erro = predictor.prever(r_h, d_h, t_rad, t_dire)
+    
+    # Atualizado para receber o novo formato (winrate, dicionario)
+    winrate_geral, resultados = predictor.prever(r_h, d_h, t_rad, t_dire)
 
-    if erro:
-        print(f"❌ Erro na simulação: {erro}")
+    if winrate_geral is None:
+        print(f"❌ Erro na simulação: {resultados}") # Neste caso de erro, a 2ª variável traz a mensagem
     else:
         print("\n" + "█"*50)
         win = resultados.get('win')
